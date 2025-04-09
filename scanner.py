@@ -24,6 +24,9 @@ def scan_extra_data(w3, start_block, end_block):
         end_block = w3.eth.get_block_number()
 
     extra_data_counter = Counter()
+    total_blocks = end_block - start_block + 1
+    progress_interval = max(1000, total_blocks // 100)  # Show progress every 1000 blocks or 1% of total
+    errors = []
 
     print(f"🔍 Scanning blocks from {start_block} to {end_block}...")
     for block_number in range(start_block, end_block + 1):
@@ -31,14 +34,26 @@ def scan_extra_data(w3, start_block, end_block):
             block = w3.eth.get_block(block_number)
             extra_data = block.extraData.hex()
             extra_data_counter[extra_data] += 1
-            print(f"Block {block_number}: {extra_data}")
+            
+            # Show progress in batches
+            if (block_number - start_block + 1) % progress_interval == 0:
+                progress = (block_number - start_block + 1) / total_blocks * 100
+                print(f"Progress: {progress:.1f}% ({block_number:,}/{end_block:,} blocks)")
         except Exception as e:
-            print(f"⚠️ Error at block {block_number}: {e}")
+            errors.append(f"Block {block_number}: {e}")
+            if len(errors) <= 5:  # Show only first 5 errors
+                print(f"⚠️ Error at block {block_number}: {e}")
+            elif len(errors) == 6:  # Show message when suppressing errors
+                print("⚠️ Additional errors suppressed...")
 
-    return extra_data_counter, end_block - start_block + 1
+    # Show final error count if any
+    if errors:
+        print(f"\n⚠️ Total errors encountered: {len(errors)}")
+
+    return extra_data_counter, total_blocks
 
 def print_summary(counter, total):
-    print("\n📊 Summary of `extraData` values:")
+    print(f"\n📊 Summary of {total:,} blocks processed:")
     table = []
     for ed_hex, count in counter.most_common():
         ed_str = decode_extra_data(ed_hex)
