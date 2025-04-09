@@ -1,0 +1,57 @@
+name: ExtraData Scanner
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_block:
+        description: 'Start block number'
+        required: true
+        type: string
+      end_block:
+        description: 'End block number (optional)'
+        required: false
+        type: string
+      rpc_url:
+        description: 'RPC URL (optional, will use secret if not provided)'
+        required: false
+        type: string
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run scanner
+      env:
+        FALLBACK_RPC_URL: ${{ secrets.GNOSIS_RPC_URL }}
+      run: |
+        RPC_URL="${{ inputs.rpc_url }}"
+        if [ -z "$RPC_URL" ]; then
+          if [ -z "$FALLBACK_RPC_URL" ]; then
+            echo "No RPC URL provided and no fallback secret found"
+            exit 1
+          fi
+          RPC_URL="$FALLBACK_RPC_URL"
+        fi
+        
+        END_BLOCK_ARG=""
+        if [ ! -z "${{ inputs.end_block }}" ]; then
+          END_BLOCK_ARG="--end ${{ inputs.end_block }}"
+        fi
+        
+        python scanner.py \
+          --start ${{ inputs.start_block }} \
+          $END_BLOCK_ARG \
+          --rpc "$RPC_URL"
