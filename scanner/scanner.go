@@ -87,6 +87,7 @@ func Scan(
 			tracker.Increment(int64(increment))
 		}
 	}
+	tracker.Increment(int64(processedBlocks % increment))
 
 	return ScanResult{
 		TotalBlocks: totalBlocks,
