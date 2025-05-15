@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -43,13 +44,26 @@ func main() {
 		slog.Info("Using latest block as end block", "block", endBlock)
 	}
 
+	pw := progress.NewWriter()
+	pw.SetStyle(progress.StyleCircle)
+	go pw.Render()
+
 	slog.Info("Scanning blocks", "start", startBlock, "end", endBlock, "rpc", rpcURL)
-	scanResults, err := scanner.Scan(context.Background(), client, startBlock, endBlock, workers)
+	scanResults, err := scanner.Scan(
+		context.Background(),
+		client,
+		startBlock,
+		endBlock,
+		workers,
+		pw,
+	)
+	pw.Stop()
 	if err != nil {
 		slog.Error("Error scanning blocks", "error", err)
 		os.Exit(1)
 	}
 
+	slog.Info("Blocks scanned", "total", scanResults.TotalBlocks)
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Hex", "Decoded", "Count", "Percentage"})
@@ -59,7 +73,7 @@ func main() {
 			slog.Error("Error decoding hex", "error", err)
 			decoded = []byte("(decode error)")
 		}
-		t.AppendRow(table.Row{hex, string(decoded), count, fmt.Sprintf("%.2f%%", float64(count)/float64(scanResults.TotalProcessed)*100)})
+		t.AppendRow(table.Row{hex, string(decoded), count, fmt.Sprintf("%.2f%%", float64(count)/float64(scanResults.TotalBlocks)*100)})
 	}
 	t.SortBy([]table.SortBy{
 		{Name: "Count", Mode: table.Dsc},

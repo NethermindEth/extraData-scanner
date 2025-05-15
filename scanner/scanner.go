@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jedib0t/go-pretty/v6/progress"
 )
 
 type BlockData struct {
@@ -17,9 +18,8 @@ type BlockData struct {
 }
 
 type ScanResult struct {
-	TotalBlocks    uint64
-	TotalProcessed uint64
-	Data           map[string]uint64
+	TotalBlocks uint64
+	Data        map[string]uint64
 }
 
 func Scan(
@@ -28,6 +28,7 @@ func Scan(
 	startBlock uint64,
 	endBlock uint64,
 	workers uint,
+	pw progress.Writer,
 ) (ScanResult, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -38,8 +39,22 @@ func Scan(
 	var wg sync.WaitGroup
 	wg.Add(int(workers))
 
+	tracker := progress.Tracker{
+		Message: "Processing blocks",
+		Total:   int64(endBlock - startBlock + 1),
+		Units:   progress.UnitsDefault,
+	}
+	pw.AppendTracker(&tracker)
+	tracker.Start()
+
 	for i := uint(0); i < workers; i++ {
-		go worker(ctx, ethClient, blockChan, resultsChan, &wg)
+		go worker(
+			ctx,
+			ethClient,
+			blockChan,
+			resultsChan,
+			&wg,
+		)
 	}
 
 	go func() {
@@ -55,10 +70,8 @@ func Scan(
 	}()
 
 	data := make(map[string]uint64, 1000)
-	processedBlocks := uint64(0)
 
 	for result := range resultsChan {
-		processedBlocks++
 		slog.Debug("Processed block", "block", result.BlockNumber, "extraData", result.Extra)
 		count, ok := data[result.ExtraHex]
 		if ok {
@@ -66,12 +79,12 @@ func Scan(
 		} else {
 			data[result.ExtraHex] = 1
 		}
+		tracker.Increment(1)
 	}
 
 	return ScanResult{
-		TotalBlocks:    endBlock - startBlock + 1,
-		TotalProcessed: processedBlocks,
-		Data:           data,
+		TotalBlocks: endBlock - startBlock + 1,
+		Data:        data,
 	}, nil
 }
 
