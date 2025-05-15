@@ -21,11 +21,16 @@ func main() {
 	var endBlock uint64
 	var workers uint
 
-	flag.StringVar(&rpcURL, "rpc", "https://rpc.gnosischain.com", "Ethereum RPC URL")
+	flag.StringVar(&rpcURL, "rpc", "", "Ethereum RPC URL (required)")
 	flag.Uint64Var(&startBlock, "start", 0, "Start block number")
 	flag.Uint64Var(&endBlock, "end", 0, "End block number. If not provided or invalid, the latest block will be used.")
 	flag.UintVar(&workers, "workers", 10, "Number of workers to use")
 	flag.Parse()
+
+	if rpcURL == "" {
+		slog.Error("--rpc flag is required and must not be empty")
+		os.Exit(1)
+	}
 
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {

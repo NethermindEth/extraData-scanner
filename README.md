@@ -28,14 +28,14 @@ go run cmd/extradata-scanner/main.go --rpc=<rpc_url> --start=<start_block> [--en
 
 ### Arguments
 
-- `--rpc`: Required. RPC URL for an EVM based Chain
+- `--rpc`: Required. RPC URL for an EVM based Chain (must be provided, no default)
 - `--start`: Optional. The block number to start scanning from (defaults to block 0)
 - `--end`: Optional. The block number to end scanning at (defaults to latest block if not greater than start block)
 
 ### Example
 
 ```bash
-go run cmd/extradata-scanner/main.go --rpc=https://rpc.gnosischain.com --start=1000000 --end=1000100
+go run cmd/extradata-scanner/main.go --rpc=<your_rpc_url> --start=1000000 --end=1000100
 ```
 
 ## GitHub Actions
