@@ -72,6 +72,9 @@ func Scan(
 	totalBlocks := endBlock - startBlock + 1
 	processedBlocks := uint64(0)
 	increment := totalBlocks / 100
+	if increment == 0 {
+		increment = 1
+	}
 	data := make(map[string]uint64, 1000)
 
 	for result := range resultsChan {
