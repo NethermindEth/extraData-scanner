@@ -69,6 +69,9 @@ func Scan(
 		close(resultsChan)
 	}()
 
+	totalBlocks := endBlock - startBlock + 1
+	processedBlocks := uint64(0)
+	increment := totalBlocks / 100
 	data := make(map[string]uint64, 1000)
 
 	for result := range resultsChan {
@@ -79,11 +82,14 @@ func Scan(
 		} else {
 			data[result.ExtraHex] = 1
 		}
-		tracker.Increment(1)
+		processedBlocks++
+		if processedBlocks%increment == 0 {
+			tracker.Increment(int64(increment))
+		}
 	}
 
 	return ScanResult{
-		TotalBlocks: endBlock - startBlock + 1,
+		TotalBlocks: totalBlocks,
 		Data:        data,
 	}, nil
 }

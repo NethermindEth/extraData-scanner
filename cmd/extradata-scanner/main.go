@@ -76,7 +76,7 @@ func main() {
 		t.AppendRow(table.Row{hex, string(decoded), count, fmt.Sprintf("%.2f%%", float64(count)/float64(scanResults.TotalBlocks)*100)})
 	}
 	t.SortBy([]table.SortBy{
-		{Name: "Count", Mode: table.Dsc},
+		{Name: "Count", Mode: table.DscNumeric},
 	})
 	t.SetStyle(table.StyleLight)
 	t.Render()
