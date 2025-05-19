@@ -3,55 +3,59 @@ name: ExtraData Scanner
 on:
   workflow_dispatch:
     inputs:
-      start_block:
-        description: 'Start block number'
+      rpc_url:
+        description: "RPC URL"
         required: true
         type: string
+      start_block:
+        description: "Start block number"
+        required: false
+        type: string
+        default: "0"
       end_block:
-        description: 'End block number (optional)'
+        description: "End block number"
         required: false
         type: string
-      rpc_url:
-        description: 'RPC URL (optional, will use secret if not provided)'
+        default: ""
+      workers:
+        description: "Number of workers for parallel processing"
         required: false
         type: string
+        default: "10"
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Run scanner
-      env:
-        FALLBACK_RPC_URL: ${{ secrets.GNOSIS_RPC_URL }}
-      run: |
-        RPC_URL="${{ inputs.rpc_url }}"
-        if [ -z "$RPC_URL" ]; then
-          if [ -z "$FALLBACK_RPC_URL" ]; then
-            echo "No RPC URL provided and no fallback secret found"
-            exit 1
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+
+      - name: Run scanner
+        env:
+          RPC_URL: ${{ inputs.rpc_url }}
+          START_BLOCK: ${{ inputs.start_block }}
+          END_BLOCK: ${{ inputs.end_block }}
+        run: |
+          END_BLOCK_ARG=""
+          if [ ! -z "$END_BLOCK" ]; then
+            END_BLOCK_ARG="--end=$END_BLOCK"
           fi
-          RPC_URL="$FALLBACK_RPC_URL"
-        fi
-        
-        END_BLOCK_ARG=""
-        if [ ! -z "${{ inputs.end_block }}" ]; then
-          END_BLOCK_ARG="--end ${{ inputs.end_block }}"
-        fi
-        
-        python scanner.py \
-          --start ${{ inputs.start_block }} \
-          $END_BLOCK_ARG \
-          --rpc "$RPC_URL"
+
+          WORKERS_ARG=""
+          if [ ! -z "$WORKERS" ]; then
+            WORKERS_ARG="--workers=$WORKERS"
+          fi
+
+          go run cmd/extradata-scanner/main.go \
+            --rpc=$RPC_URL \
+            --start=$START_BLOCK \
+            $END_BLOCK_ARG \
+            $WORKERS_ARG

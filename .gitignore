@@ -1,44 +1,23 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+*.dylib
 
-# Virtual Environment
-venv/
-env/
-ENV/
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# env file
 .env
-.venv
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Misc
-.DS_Store
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-.coverage.*
-coverage.xml
-*.cover
